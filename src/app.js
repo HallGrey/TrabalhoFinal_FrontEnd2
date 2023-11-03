@@ -4,22 +4,22 @@ const pagination = document.getElementById('pagination')
 async function listCharacters(page) {
     const response = await axios.get(`https://rickandmortyapi.com/api/character/?page=${page}`)
     console.log(response.data)
-    return response.data 
+    return response.data
 }
 
-function groupThePages(pages, group){
+function groupThePages(pages, group) {
     const groupPages = []
-    let qtd = group -1
+    let qtd = group - 1
 
-    for(let i = 1; i <= pages; i+=group){
+    for (let i = 1; i <= pages; i += group) {
         let array = []
-        for(let j = i; j <= i + qtd; j++){
-            if(j === pages + 1){
+        for (let j = i; j <= i + qtd; j++) {
+            if (j === pages + 1) {
                 break
             }
             array.push(j)
         }
-        
+
         groupPages.push(array)
     }
     return groupPages
@@ -32,31 +32,29 @@ async function nameEpisode(episode) {
 }
 
 async function renderCard(page) {
-    const character = await listCharacters (page)
-    const allPromisse = character.results.map( async (character) => {
+    const { results, info } = await listCharacters(page)
+
+    const data = [];
+
+    for (const character of results) {
         const lastEpisode = character.episode.length - 1
-        const episode = character.episode [lastEpisode]
-        const getEpisode = await nameEpisode (episode)
-        return {character, getEpisode}
-    })
-    
-    const resolveAllPromisse = Promise.all(allPromisse)
-    const data = await resolveAllPromisse
+        const episode = character.episode[lastEpisode]
+        const getNameEpisode = await nameEpisode(episode)
+        data.push({ character, episode: getNameEpisode })
+    }
 
     cardTemplate(data)
-    
-    return character.info.pages
+
+    return info.pages
 }
 
-function cardTemplate(data){
+function cardTemplate(data) {
     section.innerHTML = ""
-    data.map(async (item, index)=> {
-        const {image, name, status, species, location} = item.character
-        const {episode} = item
-        // const [episod]} = item 
-        // console.log(getEpisode)
-       
-            section.innerHTML += `
+    data.map((item, index) => {
+        const { image, name, status, species, location } = item.character
+        const { episode } = item
+
+        section.innerHTML += `
 
             <div class="card">
             <figure class="card__image">
@@ -74,18 +72,18 @@ function cardTemplate(data){
                 <p class="card_episode color-gray">${episode}</p>
             </div>
         </div>
-        ${index % 2 !== 0 && index !== 19? `<span class="divisor"></span>`: ``}
+        ${index % 2 !== 0 && index !== 19 ? `<span class="divisor"></span>` : ``}
         
         `
-        
+
     })
 }
 
-function cardStatus(status){
+function cardStatus(status) {
 
     switch (status) {
         case "Alive":
-            return  `<span class="circle circle__green"></span> Alive`
+            return `<span class="circle circle__green"></span> Alive`
         case "Dead":
             return `<span class="circle circle__red"></span> Dead`
         default:
@@ -96,14 +94,14 @@ function cardStatus(status){
 
 let counter = 0
 
-async function renderBtn () {
+async function renderBtn() {
     const numOfPages = await renderCard(1)
     const groupBtn = groupThePages(numOfPages, 5)
     const btnPrev = document.createElement("button")
     const btnContainer = document.createElement("div")
     const btnNext = document.createElement("button")
     const containerPages = document.createElement("div")
-    
+
     btnPrev.classList.add(`btnPrev`)
     btnContainer.classList.add(`btnContainer`)
     btnNext.classList.add(`btnNext`)
@@ -115,59 +113,58 @@ async function renderBtn () {
     containerPages.appendChild(btnContainer)
     containerPages.appendChild(btnNext)
     pagination.appendChild(containerPages)
-    
+
 
     createBtns(counter, btnContainer, groupBtn)
 
-    btnPrev.addEventListener("click", (e)=>{
+    btnPrev.addEventListener("click", (e) => {
         //console.log(e.target)
         console.log(counter)
-        if(counter >= 1){
+        if (counter >= 1) {
             counter--
         }
-     
+
         btnContainer.innerHTML = ""
         createBtns(counter, btnContainer, groupBtn)
-    
+
     })
-    
-    btnNext.addEventListener("click", (e)=>{
-    
+
+    btnNext.addEventListener("click", (e) => {
+
         console.log(counter)
-        if(counter < groupBtn.length - 1){
+        if (counter < groupBtn.length - 1) {
             counter++
         }
-     
+
         btnContainer.innerHTML = ""
         createBtns(counter, btnContainer, groupBtn)
         //console.log(arrayBtns[0])
     })
 }
 
-renderBtn()
 
 function createBtns(counter, btns, groupBtn) {
     let array = []
-    for(let i = 0; i < groupBtn[counter].length; i++){
+    for (let i = 0; i < groupBtn[counter].length; i++) {
         const btn = document.createElement("button")
-        
+
         btn.setAttribute("id", `${groupBtn[counter][i]}`)
         btn.innerText = `${groupBtn[counter][i]}`
         btn.classList.add("controller__btn--length")
         btns.appendChild(btn)
         array.push(btn)
 
-        btn.addEventListener("click", (e)=>{
-            
-            for(let i = 0; i < array.length; i++){
+        btn.addEventListener("click", (e) => {
+
+            for (let i = 0; i < array.length; i++) {
                 array[i].removeAttribute("disabled")
-                 
+
             }
 
             let btnCurrent = document.getElementById(`${e.target.id}`)
-            
+
             btnCurrent.setAttribute("disabled", true)
-           
+
             console.log(btnCurrent)
             renderCard(groupBtn[counter][i])
         })
@@ -177,7 +174,7 @@ function createBtns(counter, btns, groupBtn) {
 }
 
 
-async function infoGerais () {
+async function infoGerais() {
     const infoGerais = document.getElementById(`infoGerais`)
     const character = await axios.get("https://rickandmortyapi.com/api/character")
     const episode = await axios.get("https://rickandmortyapi.com/api/location")
@@ -185,10 +182,10 @@ async function infoGerais () {
 
     const personages = document.createElement('p')
     personages.innerText = `PERSONAGENS: ${character.data.info.count}`
-    
+
     const episodes = document.createElement('p')
     episodes.innerText = `EPISÓDIOS: ${episode.data.info.count}`
-    
+
     const localizacoes = document.createElement('p')
     localizacoes.innerText = `LOCALIZAÇÕES: ${location.data.info.count}`
 
@@ -197,35 +194,36 @@ async function infoGerais () {
     infoGerais.appendChild(localizacoes)
 }
 
-infoGerais()
 
-async function pesquise () {
+async function pesquise() {
     try {
-    const search = document.getElementById('search').value
-    const character = await axios.get(`https://rickandmortyapi.com/api/character/?name=${search}`
-    )
+        const search = document.getElementById('search').value
+        const character = await axios.get(`https://rickandmortyapi.com/api/character/?name=${search}`
+        )
 
-    const allPromisse = character.data.results.map( async (character) => {
-        const lastEpisode = character.episode.length - 1
-        const episode = character.episode [lastEpisode]
-        const getEpisode = await nameEpisode (episode)
-        return {character, getEpisode}
-    })
-    
-    const resolveAllPromisse = Promise.all(allPromisse)
-    const data = await resolveAllPromisse
+        const allPromisse = character.data.results.map(async (character) => {
+            const lastEpisode = character.episode.length - 1
+            const episode = character.episode[lastEpisode]
+            const getEpisode = await nameEpisode(episode)
+            return { character, getEpisode }
+        })
 
-    cardTemplate(data)
-    
+        const resolveAllPromisse = Promise.all(allPromisse)
+        const data = await resolveAllPromisse
+
+        cardTemplate(data)
+
     } catch {
         section.innerHTML = "Personagem não encontrado!"
-    }    
+    }
 
 }
 
 const searchIcon = document.getElementById('lupa')
 
-searchIcon.addEventListener (`click`, () => {
+searchIcon.addEventListener(`click`, () => {
     pesquise()
-  
 })
+
+renderBtn()
+infoGerais()
